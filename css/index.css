@@ -261,6 +261,39 @@
   color: #0571a7;
   font-size: small;
   text-decoration: none;
+  cursor: pointer;
+}
+
+.floorplanmodal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.623);
+  z-index: 99;
+  display: none
+}
+
+.floorplanmodal {
+  position: fixed;
+  width: 50vw;
+  height: fit-content;
+  min-height: 20vh;
+  transform: translate(-50%, -50%);
+  top: 50vh;
+  left: 50vw;
+  z-index: 100;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.floorplanmodal > img {
+  width: 100%;
+  height: auto;
 }
 
 @media screen and (max-width: 1050px) {
@@ -308,5 +341,9 @@
   .unitinfomodal {
     max-width: 150px;
     font-size: x-small;
+  }
+
+  .floorplanmodal {
+    width: 70vw;
   }
 }

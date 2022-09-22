@@ -102,14 +102,17 @@
 
     <footer class="page-footer"></footer>
 
+    <div class="floorplanmodal-container">
+      <div class="floorplanmodal">
+        <img src="./img/floorplan.png" />
+      </div>
+    </div>
+
     <script src="./js/three.min.js"></script>
-    <script src="./js/MTLLoader.js"></script>
     <script src="./js/GLTFLoader.js"></script>
-
     <script src="./js/OrbitControls.js"></script>
-    <!-- Scroll Stuff -->
 
-    <script async="true">
+    <script>
       // start at top of screen when done loading wesbsite
       window.onload = function () {
         setTimeout(function () {
@@ -118,10 +121,19 @@
       };
 
       AOS.init();
-    </script>
 
-    <!-- 3D Objects -->
-    <script async="true">
+      // Click floorplan bg to hide
+      document.querySelector(".floorplanmodal-container").onclick =
+        function () {
+          document.querySelector(".floorplanmodal-container").style.display =
+            "none";
+        };
+
+      function openModal() {
+        document.querySelector(".floorplanmodal-container").style.display =
+          "block";
+      }
+
       let scene, camera, renderer, controls, selectedUnit;
 
       let infoModal = document.createElement("div");
@@ -137,18 +149,20 @@
             "$1,000,000",
             "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quae."
           ),
-          position: new THREE.Vector3(100, 150, -140),
+          position: new THREE.Vector3(100, 150, -120),
+          cameraZthreshold: -150,
         },
 
-        // {
-        //   id: "unit-2",
-        //   element: createOverlayElement(
-        //     "Unit 2",
-        //     "$1,000,000",
-        //     "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quae."
-        //   ),
-        //   position: new THREE.Vector3(100, 50, -140),
-        // },
+        {
+          id: "unit-2",
+          element: createOverlayElement(
+            "Unit 2",
+            "$1,000,000",
+            "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quae."
+          ),
+          position: new THREE.Vector3(100, 50, 5),
+          cameraZthreshold: 1,
+        },
       ];
 
       function scrollToUnits() {
@@ -204,31 +218,34 @@
           scene.add(gltf.scene);
           renderer.render(scene, camera);
           gltf.scene.scale.set(0.005, 0.005, 0.005);
+          gltf.scene.position.set(0, 0, 20);
           animate();
         });
+      }
 
-
-        // const mtlLoader = new MTLLoader();
-
-      //   // Loading the mtl file and the obj file.
-      //   mtlLoader.load("./object/model.mtl", (mtlParseResult) => {
-      //     // Create an obj loader and set the materials to the MTL
-      //     const objLoader = new OBJLoader();
-      //     objLoader.setMaterials(mtlParseResult);
-
-      //     // Load the obj file and add it to the scene
-      //     objLoader.load("./object/model.obj", (object) => {
-      //       scene.add(object);
-      //       object.scale.set(0.005, 0.005, 0.005);
-      //       animate();
-      //     });
-      //   });
+      function inSight(element) {
+        if (element.position.z < 0) {
+            if (camera.position.z > element.position.z) {
+              element.element.style.display = "none";
+            } else {
+              element.element.style.display = "block";
+              return true;
+            }
+          } else {
+            if (camera.position.z < element.position.z) {
+              element.element.style.display = "none";
+            } else {
+              element.element.style.display = "block";
+              return true;
+            }
+          }
       }
 
       // Rendering the scene.
       function animate() {
         requestAnimationFrame(animate);
         controls.update();
+
         renderer.render(scene, camera);
 
         if (selectedUnit) {
@@ -237,8 +254,12 @@
           infoModal.style.maxHeight = "0px";
         }
 
+        //console.log(camera.position);
+
         overlayElements.forEach((overlayElement) => {
-          placeOnCanvas(overlayElement.element, overlayElement.position);
+          if (inSight(overlayElement)) {
+            placeOnCanvas(overlayElement.element, overlayElement.position);
+          }
         });
       }
 
@@ -255,20 +276,20 @@
             selectedUnit = elem;
 
             infoModal.innerHTML = `
-              <div class="unitinfomodal-content">
-                <div class="unitinfomodal-header">
-                  <h2>${name}</h2>
-                </div>
-                <div class="unitinfomodal-body">
-                  <p>${description}</p>
-                  <br/>
-                  <p style="font-size: x-large">${price}</p>
-                  <br/>
-                  <a href='/' target="_blank" rel="noopener noreferrer"><p>View Floor Plan</p></a>
-                  <a href='https://renderdevelopments.com/muse-tour/' target="_blank" rel="noopener noreferrer"><p>Take a 360<span>&#176;</span> Tour</p></a>
-                </div>
-              </div>
-            `;
+                    <div class="unitinfomodal-content">
+                      <div class="unitinfomodal-header">
+                        <h2>${name}</h2>
+                      </div>
+                      <div class="unitinfomodal-body">
+                        <p>${description}</p>
+                        <br/>
+                        <p style="font-size: x-large">${price}</p>
+                        <br/>
+                        <a onclick='openModal()' <p>View Floor Plan</p></a>
+                        <a href='https://renderdevelopments.com/muse-tour/' target="_blank" rel="noopener noreferrer"><p>Take a 360<span>&#176;</span> Tour</p></a>
+                      </div>
+                    </div>
+                  `;
           }
         };
 
