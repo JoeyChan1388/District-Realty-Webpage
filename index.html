@@ -199,24 +199,31 @@
         bgScene = new THREE.Scene();
 
         // Load background image
-        const loader = new THREE.TextureLoader();
-        const texture = loader.load("./img/pano-image.JPG");
-        texture.magFilter = THREE.LinearFilter;
-        texture.minFilter = THREE.LinearFilter;
+        // const loader = new THREE.TextureLoader();
+        // const texture = loader.load("./img/pano-image-old.JPG");
+        // texture.magFilter = THREE.LinearFilter;
+        // texture.minFilter = THREE.LinearFilter;
 
-        // Create background mesh properties
-        const shader = THREE.ShaderLib.equirect;
-        const material = new THREE.ShaderMaterial({
-          fragmentShader: shader.fragmentShader,
-          vertexShader: shader.vertexShader,
-          uniforms: shader.uniforms,
-          depthWrite: false,
+        // // Create background mesh properties
+        // const shader = THREE.ShaderLib.equirect;
+        // const material = new THREE.ShaderMaterial({
+        //   fragmentShader: shader.fragmentShader,
+        //   vertexShader: shader.vertexShader,
+        //   uniforms: shader.uniforms,
+        //   depthWrite: false,
+        //   side: THREE.BackSide,
+        // });
+
+        // Create background mesh
+        // material.uniforms.tEquirect.value = texture;
+
+        const material = new THREE.MeshBasicMaterial({
+          //baby blue
+          color: 0xc1e7f9,
           side: THREE.BackSide,
         });
 
-        // Create background mesh
-        material.uniforms.tEquirect.value = texture;
-        const plane = new THREE.BoxGeometry(1000, 1000, 1000)
+        const plane = new THREE.SphereGeometry(1000, 32, 32, 0, Math.PI * 2, 0, Math.PI * 1);
         bgMesh = new THREE.Mesh(plane, material);
 
         // Add camera
@@ -224,7 +231,7 @@
           45,
           window.innerWidth / window.innerHeight,
           1,
-          1000
+          2100
         );
 
         // Camera starting position
@@ -235,7 +242,7 @@
         // Initalize Orbit Controls
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.minDistance = 250;
-        controls.maxDistance = 600;
+        controls.maxDistance = 800;
         controls.enablePan = false;
         controls.target = new THREE.Vector3(200, 100, -70);
 
@@ -286,7 +293,6 @@
         controls.update();
 
         if (showBackground) {
-          bgMesh.position.copy(camera.position);
           renderer.render(bgScene, camera);
         }
 
