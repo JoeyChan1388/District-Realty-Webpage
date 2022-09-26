@@ -84,6 +84,7 @@
           <div class="apartment-wrapper">
             <div id="labels"></div>
           </div>
+          <button onclick="toggleBackground()">Toggle Background</button>
         </div>
       </div>
     </div>
@@ -134,7 +135,8 @@
           "block";
       }
 
-      let scene, camera, renderer, controls, selectedUnit;
+      let scene, camera, renderer, controls, selectedUnit, bgScene, bgMesh;
+      let showBackground = false;
 
       let infoModal = document.createElement("div");
       infoModal.classList.add("unitinfomodal");
@@ -171,11 +173,17 @@
         });
       }
 
+      // Toggle to show the background image.
+      function toggleBackground() {
+        showBackground = !showBackground;
+      }
+
       // Initializing the 3D model.
       function init3DModel() {
         // Create canvas element
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth * 0.75, window.innerHeight * 0.825);
+        renderer.autoClearColor = false;
 
         // Append canvas to the DOM
         document
@@ -186,6 +194,30 @@
 
         // Create scene inside canvas
         scene = new THREE.Scene();
+
+        // Create alt scene for equirrectangular background
+        bgScene = new THREE.Scene();
+
+        // Load background image
+        const loader = new THREE.TextureLoader();
+        const texture = loader.load("./img/pano-image.jpg");
+        texture.magFilter = THREE.LinearFilter;
+        texture.minFilter = THREE.LinearFilter;
+
+        // Create background mesh properties
+        const shader = THREE.ShaderLib.equirect;
+        const material = new THREE.ShaderMaterial({
+          fragmentShader: shader.fragmentShader,
+          vertexShader: shader.vertexShader,
+          uniforms: shader.uniforms,
+          depthWrite: false,
+          side: THREE.BackSide,
+        });
+
+        // Create background mesh
+        material.uniforms.tEquirect.value = texture;
+        const plane = new THREE.BoxGeometry(1000, 1000, 1000)
+        bgMesh = new THREE.Mesh(plane, material);
 
         // Add camera
         camera = new THREE.PerspectiveCamera(
@@ -215,36 +247,48 @@
 
         // Load 3D model
         gltfLoader.load("./object/model.glb", (gltf) => {
+          // Add the model to the scene and render it on the canvas.
+          bgScene.add(bgMesh);
           scene.add(gltf.scene);
           renderer.render(scene, camera);
+
+          // Set the position and size of the model
           gltf.scene.scale.set(0.005, 0.005, 0.005);
           gltf.scene.position.set(0, 0, 20);
+
+          // Set up animation loop
           animate();
         });
       }
 
+      // Check if a specified element is not being blocked
       function inSight(element) {
         if (element.position.z < 0) {
-            if (camera.position.z > element.position.z) {
-              element.element.style.display = "none";
-            } else {
-              element.element.style.display = "block";
-              return true;
-            }
+          if (camera.position.z > element.position.z) {
+            element.element.style.display = "none";
           } else {
-            if (camera.position.z < element.position.z) {
-              element.element.style.display = "none";
-            } else {
-              element.element.style.display = "block";
-              return true;
-            }
+            element.element.style.display = "block";
+            return true;
           }
+        } else {
+          if (camera.position.z < element.position.z) {
+            element.element.style.display = "none";
+          } else {
+            element.element.style.display = "block";
+            return true;
+          }
+        }
       }
 
       // Rendering the scene.
       function animate() {
         requestAnimationFrame(animate);
         controls.update();
+
+        if (showBackground) {
+          bgMesh.position.copy(camera.position);
+          renderer.render(bgScene, camera);
+        }
 
         renderer.render(scene, camera);
 
@@ -253,8 +297,6 @@
         } else {
           infoModal.style.maxHeight = "0px";
         }
-
-        //console.log(camera.position);
 
         overlayElements.forEach((overlayElement) => {
           if (inSight(overlayElement)) {
@@ -315,8 +357,15 @@
         elem.style.transform = `translate(${x}px,${y}px) translate(50%, 50%)`;
         elem.style.visibility = "visible";
 
-        if (elem === selectedUnit) {
-          infoModal.style.transform = `translate(${x}px,${y}px) translate(50%, -50%)`;
+        // Place the unit info modal on the left or right side of the unit depending on the position of the unit.
+        if (x <= renderer.domElement.getBoundingClientRect().width / 2) {
+          if (elem === selectedUnit) {
+            infoModal.style.transform = `translate(${x}px,${y}px) translate(50%, -50%)`;
+          }
+        } else {
+          if (elem === selectedUnit) {
+            infoModal.style.transform = `translate(${x}px,${y}px) translate(-100%, -50%)`;
+          }
         }
       }
 
