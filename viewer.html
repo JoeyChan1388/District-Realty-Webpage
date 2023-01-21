@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>District Realty</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./css/index.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;1,100&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <!-- The viewer and header, this can be taken out and embedded on any other website -->
+    <div class="unit-section-wrapper">
+      <div class="unit-section">
+        <h1>
+          Take a look at our units.
+        </h1>
+
+        <div class="apartment-wrapper">
+          <button onclick="toggleBackground()">Toggle Background</button>
+          <div id="labels"></div>
+        </div>
+      </div>
+    </div>
+    <!-- End of viewer -->
+
+    <div class="floorplanmodal-container">
+      <div class="floorplanmodal">
+        <img src="./img/floorplan.png" />
+      </div>
+    </div>
+
+    <!-- Included js files for viewer functionality -->
+    <script src="./js/three.min.js"></script>
+    <script src="./js/GLTFLoader.js"></script>
+    <script src="./js/OrbitControls.js"></script>
+  </body>
+
+  <script>
+    // Click floorplan bg to hide
+    document.querySelector(".floorplanmodal-container").onclick =
+      function () {
+        document.querySelector(".floorplanmodal-container").style.display =
+          "none";
+      };
+
+    function openModal() {
+      document.querySelector(".floorplanmodal-container").style.display =
+        "block";
+    }
+
+    // Viewer Stuff
+    let scene, camera, renderer, controls, selectedUnit, bgScene, bgMesh;
+    let showBackground = false;
+
+    let infoModal = document.createElement("div");
+    infoModal.classList.add("unitinfomodal");
+    infoModal.id = "unitinfomodal";
+    document.getElementById("labels").appendChild(infoModal);
+
+    // The dots with info you can click on
+    const overlayElements = [
+      {
+        id: "unit-1",
+        element: createOverlayElement(
+          "Unit 1",
+          "$1,000,000",
+          "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quae."
+        ),
+        position: new THREE.Vector3(100, 150, -120),
+        cameraZthreshold: -150,
+      },
+
+      {
+        id: "unit-2",
+        element: createOverlayElement(
+          "Unit 2",
+          "$1,000,000",
+          "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quae."
+        ),
+        position: new THREE.Vector3(100, 50, 5),
+        cameraZthreshold: 1,
+      },
+    ];
+
+    // Toggle to show the background image.
+    function toggleBackground() {
+      showBackground = !showBackground;
+    }
+
+    // Initializing the 3D model.
+    function init3DModel() {
+      // Create canvas element
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth * 0.75, window.innerHeight * 0.825);
+      renderer.autoClearColor = false;
+
+      // Append canvas to the DOM
+      document
+        .getElementsByClassName("apartment-wrapper")[0]
+        .appendChild(renderer.domElement);
+
+      renderer.domElement.id = "apartment-view";
+
+      // Create scene inside canvas
+      scene = new THREE.Scene();
+
+      // Create alt scene for equirrectangular background
+      bgScene = new THREE.Scene();
+
+      // Load background image
+      // const loader = new THREE.TextureLoader();
+      // const texture = loader.load("./img/pano-image-old.JPG");
+      // texture.magFilter = THREE.LinearFilter;
+      // texture.minFilter = THREE.LinearFilter;
+
+      // // Create background mesh properties
+      // const shader = THREE.ShaderLib.equirect;
+      // const material = new THREE.ShaderMaterial({
+      //   fragmentShader: shader.fragmentShader,
+      //   vertexShader: shader.vertexShader,
+      //   uniforms: shader.uniforms,
+      //   depthWrite: false,
+      //   side: THREE.BackSide,
+      // });
+
+      // Create background mesh
+      // material.uniforms.tEquirect.value = texture;
+
+      const material = new THREE.MeshBasicMaterial({
+        //baby blue
+        color: 0xc1e7f9,
+        side: THREE.BackSide,
+      });
+
+      const plane = new THREE.SphereGeometry(1000, 32, 32, 0, Math.PI * 2, 0, Math.PI * 1);
+      bgMesh = new THREE.Mesh(plane, material);
+
+      // Add camera
+      camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        1,
+        2100
+      );
+
+      // Camera starting position
+      camera.position.x = 200;
+      camera.position.y = 100;
+      camera.position.z = -500;
+
+      // Initalize Orbit Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.minDistance = 250;
+      controls.maxDistance = 800;
+      controls.enablePan = false;
+      controls.target = new THREE.Vector3(200, 100, -70);
+
+      // Add ambient light
+      hlight = new THREE.AmbientLight(0x404040, 7);
+      scene.add(hlight);
+
+      const gltfLoader = new THREE.GLTFLoader();
+
+      // Load 3D model
+      gltfLoader.load("./object/model.glb", (gltf) => {
+        // Add the model to the scene and render it on the canvas.
+        bgScene.add(bgMesh);
+        scene.add(gltf.scene);
+        renderer.render(scene, camera);
+
+        // Set the position and size of the model
+        gltf.scene.scale.set(0.005, 0.005, 0.005);
+        gltf.scene.position.set(0, 0, 20);
+
+        // Set up animation loop
+        animate();
+      });
+    }
+
+    // Check if a specified element is not being blocked
+    function inSight(element) {
+      if (element.position.z < 0) {
+        if (camera.position.z > element.position.z) {
+          element.element.style.display = "none";
+        } else {
+          element.element.style.display = "block";
+          return true;
+        }
+      } else {
+        if (camera.position.z < element.position.z) {
+          element.element.style.display = "none";
+        } else {
+          element.element.style.display = "block";
+          return true;
+        }
+      }
+    }
+
+    // Rendering the scene.
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+
+      if (showBackground) {
+        renderer.render(bgScene, camera);
+      }
+
+      renderer.render(scene, camera);
+
+      if (selectedUnit) {
+        infoModal.style.maxHeight = "fit-content";
+      } else {
+        infoModal.style.maxHeight = "0px";
+      }
+
+      overlayElements.forEach((overlayElement) => {
+        if (inSight(overlayElement)) {
+          placeOnCanvas(overlayElement.element, overlayElement.position);
+        }
+      });
+    }
+
+    // Creating a div element and appending it to the div with the id of labels.
+    function createOverlayElement(name, price, description) {
+      const elem = document.createElement("div");
+      document.getElementById("labels").appendChild(elem);
+      elem.classList.add("label");
+
+      elem.onclick = () => {
+        if (selectedUnit === elem) {
+          selectedUnit = null;
+        } else {
+          selectedUnit = elem;
+
+          infoModal.innerHTML = `
+                  <div class="unitinfomodal-content">
+                    <div class="unitinfomodal-header">
+                      <h2>${name}</h2>
+                    </div>
+                    <div class="unitinfomodal-body">
+                      <p>${description}</p>
+                      <br/>
+                      <p style="font-size: x-large">${price}</p>
+                      <br/>
+                      <a onclick='openModal()' <p>View Floor Plan</p></a>
+                      <a href='https://renderdevelopments.com/90-champagne-tour/' target="_blank" rel="noopener noreferrer"><p>Take a 360<span>&#176;</span> Tour</p></a>
+                    </div>
+                  </div>
+                `;
+        }
+      };
+
+      return elem;
+    }
+
+    // Placing the overlay elements on the canvas.
+    function placeOnCanvas(elem, position) {
+      const tempVector = new THREE.Vector3(
+        position.x,
+        position.y,
+        position.z
+      );
+      const vector = tempVector.project(camera);
+
+      // convert the normalized position to CSS coordinates
+      const x =
+        (vector.x * 0.5 + 0.5) *
+        renderer.domElement.getBoundingClientRect().width;
+      const y = (vector.y * -0.5 + 0.5) * renderer.domElement.clientHeight;
+
+      // move the elem to that position
+      elem.style.transform = `translate(${x}px,${y}px) translate(50%, 50%)`;
+      elem.style.visibility = "visible";
+
+      // Place the unit info modal on the left or right side of the unit depending on the position of the unit.
+      if (x <= renderer.domElement.getBoundingClientRect().width / 2) {
+        if (elem === selectedUnit) {
+          infoModal.style.transform = `translate(${x}px,${y}px) translate(50%, -50%)`;
+        }
+      } else {
+        if (elem === selectedUnit) {
+          infoModal.style.transform = `translate(${x}px,${y}px) translate(-100%, -50%)`;
+        }
+      }
+    }
+
+    // Updating the camera aspect ratio and the renderer size when the window is resized.
+    function onResize() {
+      camera.aspect =
+        document.getElementsByClassName("apartment-wrapper")[0].clientWidth /
+        window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(
+        document.getElementsByClassName("apartment-wrapper")[0].clientWidth,
+        window.innerHeight
+      );
+    }
+
+    // Load up threeJS and the 3D model.
+    init3DModel();
+    // Initialize Responsive Canvas and Camera
+    onResize();
+    // Add event listener to resize the canvas and camera when the window is resized.
+    window.addEventListener("resize", onResize, false);
+  </script>
+</html>

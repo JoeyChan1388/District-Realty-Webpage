@@ -75,6 +75,8 @@
         </div>
       </div>
 
+      
+      <!-- The viewer and header, this can be taken out and embedded on any other website -->
       <div class="unit-section-wrapper">
         <div class="unit-section">
           <h1 data-aos="fade-up" data-aos-duration="1000">
@@ -87,6 +89,7 @@
           </div>
         </div>
       </div>
+      <!-- End of viewer -->
     </div>
 
     <svg
@@ -109,6 +112,7 @@
       </div>
     </div>
 
+    <!-- Included js files for viewer functionality -->
     <script src="./js/three.min.js"></script>
     <script src="./js/GLTFLoader.js"></script>
     <script src="./js/OrbitControls.js"></script>
@@ -123,6 +127,12 @@
 
       AOS.init();
 
+      function scrollToUnits() {
+        document.querySelector(".unit-section").scrollIntoView({
+          behavior: "smooth",
+        });
+      }
+
       // Click floorplan bg to hide
       document.querySelector(".floorplanmodal-container").onclick =
         function () {
@@ -135,6 +145,7 @@
           "block";
       }
 
+      // Viewer Stuff
       let scene, camera, renderer, controls, selectedUnit, bgScene, bgMesh;
       let showBackground = false;
 
@@ -143,6 +154,7 @@
       infoModal.id = "unitinfomodal";
       document.getElementById("labels").appendChild(infoModal);
 
+      // The dots with info you can click on
       const overlayElements = [
         {
           id: "unit-1",
@@ -166,12 +178,6 @@
           cameraZthreshold: 1,
         },
       ];
-
-      function scrollToUnits() {
-        document.querySelector(".unit-section").scrollIntoView({
-          behavior: "smooth",
-        });
-      }
 
       // Toggle to show the background image.
       function toggleBackground() {
@@ -243,11 +249,11 @@
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.minDistance = 250;
         controls.maxDistance = 800;
-        controls.enablePan = false;
+        controls.enablePan = true;
         controls.target = new THREE.Vector3(200, 100, -70);
 
         // Add ambient light
-        hlight = new THREE.AmbientLight(0x404040, 7);
+        hlight = new THREE.AmbientLight(0x404040, 4.5);
         scene.add(hlight);
 
         const gltfLoader = new THREE.GLTFLoader();
@@ -260,7 +266,7 @@
           renderer.render(scene, camera);
 
           // Set the position and size of the model
-          gltf.scene.scale.set(0.005, 0.005, 0.005);
+          gltf.scene.scale.set(1,1,1);
           gltf.scene.position.set(0, 0, 20);
 
           // Set up animation loop
